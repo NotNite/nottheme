@@ -1,0 +1,107 @@
+---
+import type { Settings } from "./types";
+
+interface Props {
+  settings: Settings;
+}
+
+const { settings } = Astro.props;
+const settingsJson = JSON.stringify(settings);
+---
+
+<script defer is:inline data-settings={settingsJson}>
+  const settings = JSON.parse(document.currentScript.dataset.settings);
+
+  window.__nottheme_computeDefault = (option) => {
+    if (typeof option.default === "string") {
+      return option.default;
+    } else {
+      for (const defaultEntry of option.default) {
+        if (typeof defaultEntry === "string") {
+          return defaultEntry;
+        } else {
+          const query = defaultEntry.query;
+          if (window.matchMedia(query).matches) {
+            return defaultEntry.choice;
+          }
+        }
+      }
+    }
+  };
+
+  const prefix = "nottheme-";
+  window.__nottheme_get = (key) => {
+    const localStorageKey = prefix + key;
+    const value = window.localStorage.getItem(localStorageKey);
+    if (value) return value;
+
+    const option = window.__nottheme_computeDefault(settings.options[key]);
+    window.localStorage.setItem(localStorageKey, option);
+    return option;
+  };
+
+  window.__nottheme_set = (key, value) => {
+    const localStorageKey = prefix + key;
+
+    const classList = document.body.classList;
+    for (const className of classList) {
+      if (className.startsWith(key + "-")) {
+        classList.remove(className);
+      }
+    }
+    classList.add(key + "-" + value);
+
+    window.localStorage.setItem(localStorageKey, value);
+    if (window.__nottheme_onChange) window.__nottheme_onChange(key, value);
+  };
+
+  function init() {
+    document.body.classList.remove("nottheme");
+    for (const group of Object.keys(settings.options)) {
+      const value = window.__nottheme_get(group);
+      window.__nottheme_set(group, value);
+    }
+  }
+
+  function setLoaded() {
+    if (!document.body.classList.contains("nottheme-loaded")) {
+      document.body.classList.add("nottheme-loaded");
+    }
+  }
+
+  function register() {
+    const selects = document.querySelectorAll(
+      ".nottheme-theming-script select"
+    );
+
+    for (const selected of selects) {
+      selected.addEventListener("change", () => {
+        const option = selected.options[selected.selectedIndex];
+        const id = option.id;
+        const [_, __, key, theme] = id.split("__");
+        window.__nottheme_set(key, theme);
+      });
+
+      const options = selected.options;
+      for (const option of options) {
+        const key = option.id.split("__")[2];
+        const theme = option.value;
+
+        if (window.__nottheme_get(key) === theme) {
+          option.selected = true;
+        }
+      }
+    }
+  }
+
+  init();
+
+  document.addEventListener("DOMContentLoaded", register);
+  window.addEventListener("load", setLoaded);
+  document.addEventListener("astro:after-swap", () => {
+    // Astro remakes the DOM on navigation
+    init();
+    register();
+    setLoaded();
+  });
+</script>

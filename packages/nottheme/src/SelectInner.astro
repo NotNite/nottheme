@@ -1,0 +1,45 @@
+---
+import type { Settings } from "./types";
+
+interface Props {
+  settings: Settings;
+  id: string;
+  showBlank: boolean;
+}
+
+const { settings, id, showBlank } = Astro.props;
+---
+
+<div class={"nottheme-theming nottheme-theming-" + id}>
+  {
+    Object.entries(settings.options).map(([key, value]) => {
+      const name = value.name ?? key;
+
+      return (
+        <div class="nottheme-theming-entry">
+          <span class="nottheme-theming-name">{name}</span>
+          <select
+            id={"nottheme__theming__" + key}
+            class="nottheme-theming-select"
+          >
+            {/* Blank entry is required so that the theme doesn't stay stuck on the first one */}
+            {showBlank && <option value="" />}
+
+            {value.choices.map((theme) => {
+              const choiceName = value.names?.[theme] || theme;
+              return (
+                <option
+                  value={theme}
+                  id={`nottheme__${id}__${key}__${theme}`}
+                  class={`${key}-${theme}`}
+                >
+                  {choiceName}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+      );
+    })
+  }
+</div>

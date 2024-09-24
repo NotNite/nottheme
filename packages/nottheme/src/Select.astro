@@ -1,0 +1,23 @@
+---
+import SelectInner from "./SelectInner.astro";
+import type { Settings } from "./types";
+
+interface Props {
+  settings: Settings;
+}
+
+const { settings } = Astro.props;
+---
+
+<noscript>
+  <SelectInner id="noscript" showBlank={true} settings={settings} />
+
+  <style is:global>
+    .nottheme-theming-script {
+      /* Hack to get the JS-powered one to not show */
+      display: none !important;
+    }
+  </style>
+</noscript>
+
+<SelectInner id="script" showBlank={false} settings={settings} />

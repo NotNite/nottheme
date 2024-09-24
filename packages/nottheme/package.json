@@ -1,0 +1,9 @@
+{
+  "name": "nottheme",
+  "description": "Accessible theme switcher for Astro",
+  "type": "module",
+  "version": "1.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
