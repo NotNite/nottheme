@@ -2,6 +2,12 @@
 
 Accessible theme switcher for Astro.
 
+## Installation
+
+```shell
+npm i nottheme
+```
+
 ## Usage
 
 See [the demo](https://github.com/NotNite/nottheme/blob/main/demo/ssg/src/layout.astro).
