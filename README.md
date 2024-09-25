@@ -4,9 +4,15 @@ Accessible theme switcher for Astro.
 
 ## Usage
 
-See the `demo/ssg/src/layout.astro` file.
+See [the demo](https://github.com/NotNite/nottheme/blob/main/demo/ssg/src/layout.astro).
 
-If you need to know when the theme changes, set `window.__nottheme_onChange` to a function (`(key: string, value: string) => void`).
+If you need to know when the theme changes, set `window.__nottheme_onChange` to a function:
+
+```ts
+window.__nottheme_onChange = (key: string, value: string) => {
+  console.log(key, value);
+};
+```
 
 ## Features
 
