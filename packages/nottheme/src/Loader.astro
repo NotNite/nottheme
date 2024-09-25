@@ -1,28 +1,53 @@
 ---
 import type { Settings } from "./types";
 
+type SlimSettings = Record<
+  string,
+  {
+    c: string[];
+    d: string | (string | [string, string])[];
+  }
+>;
+
 interface Props {
   settings: Settings;
 }
 
 const { settings } = Astro.props;
-const settingsJson = JSON.stringify(settings);
+const slimSettings: SlimSettings = {};
+for (const [key, value] of Object.entries(settings.options)) {
+  slimSettings[key] = {
+    c: value.choices,
+    d:
+      typeof value.default === "string"
+        ? value.default
+        : value.default.map((d) => {
+            if (typeof d === "string") {
+              return d;
+            } else {
+              return [d.query, d.choice];
+            }
+          })
+  };
+}
+const settingsJson = JSON.stringify(slimSettings);
+// Really don't like how that script has to be inline... ugh
 ---
 
 <script defer is:inline data-settings={settingsJson}>
   const settings = JSON.parse(document.currentScript.dataset.settings);
 
   window.__nottheme_computeDefault = (option) => {
-    if (typeof option.default === "string") {
-      return option.default;
+    if (typeof option.d === "string") {
+      return option.d;
     } else {
-      for (const defaultEntry of option.default) {
+      for (const defaultEntry of option.d) {
         if (typeof defaultEntry === "string") {
           return defaultEntry;
         } else {
-          const query = defaultEntry.query;
+          const [query, choice] = defaultEntry;
           if (window.matchMedia(query).matches) {
-            return defaultEntry.choice;
+            return choice;
           }
         }
       }
@@ -35,7 +60,7 @@ const settingsJson = JSON.stringify(settings);
     const value = window.localStorage.getItem(localStorageKey);
     if (value) return value;
 
-    const option = window.__nottheme_computeDefault(settings.options[key]);
+    const option = window.__nottheme_computeDefault(settings[key]);
     window.localStorage.setItem(localStorageKey, option);
     return option;
   };
@@ -57,9 +82,17 @@ const settingsJson = JSON.stringify(settings);
 
   function init() {
     document.body.classList.remove("nottheme");
-    for (const group of Object.keys(settings.options)) {
+    for (const group of Object.keys(settings)) {
       const value = window.__nottheme_get(group);
-      window.__nottheme_set(group, value);
+      const choices = settings[group].c;
+      if (!choices.includes(value)) {
+        window.__nottheme_set(
+          group,
+          window.__nottheme_computeDefault(settings[group])
+        );
+      } else {
+        window.__nottheme_set(group, value);
+      }
     }
   }
 
