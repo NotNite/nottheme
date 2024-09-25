@@ -17,7 +17,12 @@ const { settings, id, showBlank } = Astro.props;
 
       return (
         <div class="nottheme-theming-entry">
-          <span class="nottheme-theming-name">{name}</span>
+          <label
+            for={"nottheme__theming__" + key}
+            class="nottheme-theming-name"
+          >
+            {name}
+          </label>
           <select
             id={"nottheme__theming__" + key}
             class="nottheme-theming-select"
