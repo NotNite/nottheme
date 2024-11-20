@@ -12,11 +12,10 @@ let root = "";
 let mediaQueries: Record<string, string> = {};
 let classes: Record<string, string> = {};
 
-function doChoice(values: Record<string, Value>, indent: number = 2): string {
+function doChoice(values: Record<string, Value>): string {
   let style = "";
-  let indentStr = indent > 0 ? " ".repeat(indent) : "";
   for (const [property, value] of Object.entries(values)) {
-    style += `${indentStr}${property}: ${value};\n`;
+    style += `${property}: ${value}; `;
   }
   return style.trimEnd();
 }
@@ -25,17 +24,17 @@ for (const [optionName, option] of Object.entries(settings.options)) {
   // Compute the default properties
   if (typeof option.default === "string") {
     const choice = option.values[option.default];
-    root += `${doChoice(choice)}\n`;
+    root += `${doChoice(choice)} `;
   } else {
     for (const defaultEntry of option.default) {
       if (typeof defaultEntry === "string") {
         const choice = option.values[defaultEntry];
-        root += `${doChoice(choice)}\n`;
+        root += `${doChoice(choice)} `;
       } else {
         const query = defaultEntry.query;
         if (!mediaQueries[query]) mediaQueries[query] = "";
         const choice = option.values[defaultEntry.choice];
-        mediaQueries[query] += `${doChoice(choice, 4)}\n`;
+        mediaQueries[query] += `${doChoice(choice)} `;
       }
     }
   }
@@ -44,39 +43,30 @@ for (const [optionName, option] of Object.entries(settings.options)) {
   for (const [choiceName, values] of Object.entries(option.values)) {
     const className = `.${optionName}-${choiceName}`;
     const input = `.nottheme:has(option[id="nottheme__noscript__${optionName}__${choiceName}"]:checked)`;
-    let style = `${className}, ${input} {\n`;
+    let style = `${className}, ${input} { `;
 
     for (const [property, value] of Object.entries(values)) {
-      style += `  ${property}: ${value};\n`;
+      style += `${property}: ${value}; `;
     }
 
-    style += "}\n";
+    style += "}";
     classes[className] = style;
   }
 }
 
 // Render root
 const rootQuery = "body.nottheme";
-str += `${rootQuery} {
-${root.trimEnd()}
-}
-`;
+str += `${rootQuery} { ${root.trimEnd()} } `;
 
 // Render media queries
 for (const [query, styles] of Object.entries(mediaQueries)) {
-  str += `
-@media ${query} {
-  ${rootQuery} {
-${styles.trimEnd()}
-  }
-}
-`;
+  str += `@media ${query} { ${rootQuery} { ${styles.trimEnd()} } } `;
 }
 
 // Render classes
 for (const style of Object.values(classes)) {
-  str += `\n${style}`;
+  str += `${style} `;
 }
 ---
 
-<style is:global set:html={str}></style>
+<style is:global set:html={str.trim()}></style>

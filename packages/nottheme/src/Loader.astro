@@ -9,6 +9,18 @@ type SlimSettings = Record<
   }
 >;
 
+declare global {
+  interface Window {
+    __nottheme_settings: SlimSettings;
+    __nottheme_computeDefault: (
+      option: SlimSettings[string]
+    ) => string | undefined;
+    __nottheme_get: (key: string) => string;
+    __nottheme_set: (key: string, value: string) => void;
+    __nottheme_onChange?: (key: string, value: string) => void;
+  }
+}
+
 interface Props {
   settings: Settings;
 }
@@ -31,11 +43,13 @@ for (const [key, value] of Object.entries(settings.options)) {
   };
 }
 const settingsJson = JSON.stringify(slimSettings);
-// Really don't like how that script has to be inline... ugh
 ---
 
-<script defer is:inline data-settings={settingsJson}>
-  const settings = JSON.parse(document.currentScript.dataset.settings);
+<nottheme data-settings={settingsJson}></nottheme>
+<script>
+  const settings: typeof window.__nottheme_settings = JSON.parse(
+    document.querySelector<HTMLElement>("nottheme")!.dataset.settings!
+  );
 
   window.__nottheme_computeDefault = (option) => {
     if (typeof option.d === "string") {
@@ -60,7 +74,7 @@ const settingsJson = JSON.stringify(slimSettings);
     const value = window.localStorage.getItem(localStorageKey);
     if (value) return value;
 
-    const option = window.__nottheme_computeDefault(settings[key]);
+    const option = window.__nottheme_computeDefault(settings[key])!;
     window.localStorage.setItem(localStorageKey, option);
     return option;
   };
@@ -88,7 +102,7 @@ const settingsJson = JSON.stringify(slimSettings);
       if (!choices.includes(value)) {
         window.__nottheme_set(
           group,
-          window.__nottheme_computeDefault(settings[group])
+          window.__nottheme_computeDefault(settings[group])!
         );
       } else {
         window.__nottheme_set(group, value);
@@ -103,7 +117,7 @@ const settingsJson = JSON.stringify(slimSettings);
   }
 
   function register() {
-    const selects = document.querySelectorAll(
+    const selects = document.querySelectorAll<HTMLSelectElement>(
       ".nottheme-theming-script select"
     );
 
