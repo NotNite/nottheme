@@ -4,7 +4,7 @@
   "homepage": "https://github.com/NotNite/nottheme",
   "license": "MIT",
   "type": "module",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "exports": {
     ".": "./src/index.ts"
   },

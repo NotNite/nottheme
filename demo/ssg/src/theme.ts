@@ -1,55 +1,62 @@
-import type { Settings } from "nottheme";
+import { option, settings } from "nottheme";
 
-const settings: Settings = {
-  options: {
-    theme: {
-      name: "Theme",
-      choices: ["light", "dark"],
-      names: {
-        light: "Light",
-        dark: "Dark"
-      },
+// Define your options using the `option` helper
+const theme = option({
+  choices: ["light", "dark"], // internal IDs
+  name: "Theme", // optional human-readable name
+  names: {
+    // optional human-readable names
+    light: "Light",
+    dark: "Dark"
+  },
 
-      values: {
-        light: {
-          "--bg": "#fff",
-          "--fg": "#000"
-        },
-        dark: {
-          "--bg": "#000",
-          "--fg": "#fff"
-        }
-      },
-
-      default: [
-        {
-          query: "(prefers-color-scheme: dark)",
-          choice: "dark"
-        },
-        "light"
-      ]
+  // Define CSS variables to use with these choices
+  values: {
+    light: {
+      "--bg": "#fff",
+      "--fg": "#000"
     },
-
-    font: {
-      name: "Font",
-      choices: ["sansSerif", "monospace"],
-      names: {
-        sansSerif: "Sans-serif",
-        monospace: "Monospace"
-      },
-
-      values: {
-        sansSerif: {
-          "--font": "sans-serif"
-        },
-        monospace: {
-          "--font": "monospace"
-        }
-      },
-
-      default: "sansSerif"
+    dark: {
+      "--bg": "#000",
+      "--fg": "#fff"
     }
-  }
-};
+  },
 
-export default settings;
+  // Set the default choice, even with media query support
+  default: [
+    {
+      query: "(prefers-color-scheme: dark)",
+      choice: "dark"
+    },
+    "light"
+  ]
+});
+
+// Use nottheme for more than colors - font, layout, whatever you want!
+const font = option({
+  name: "Font",
+  choices: ["sansSerif", "monospace"],
+  names: {
+    sansSerif: "Sans-serif",
+    monospace: "Monospace"
+  },
+
+  values: {
+    sansSerif: {
+      "--font": "sans-serif"
+    },
+    monospace: {
+      "--font": "monospace"
+    }
+  },
+
+  default: "sansSerif"
+});
+
+// Include all your options in your settings
+export default settings({
+  options: {
+    theme,
+    font
+  }
+});

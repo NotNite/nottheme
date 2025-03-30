@@ -1,7 +1,5 @@
 ---
 import { ThemeLoader, ThemeSelect, ThemeStyling } from "nottheme";
-import { ViewTransitions } from "astro:transitions";
-
 // Make a file with your theme settings
 import settings from "./theme";
 ---
@@ -9,32 +7,26 @@ import settings from "./theme";
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
+    <title>nottheme SSG demo</title>
 
-    <!-- It even works with view transitions! -->
-    <ViewTransitions />
-
-    <!-- Include this at the bottom of the head -->
+    <!-- Include this at the bottom of the head (loads the CSS) -->
     <ThemeStyling settings={settings} />
   </head>
 
-  <!-- Set the "nottheme" class on the body to support zero JavaScript -->
-  <body class="nottheme" transition:name="fade">
-    <!-- Include this at the top of the body -->
+  <body>
+    <!-- Include this at the top of the body (for applying the theme) -->
     <ThemeLoader settings={settings} />
 
     <main>
       <slot />
-      <!-- Put this somewhere to allow users to configure it -->
+      <!-- Put this somewhere so users can configure themes -->
       <ThemeSelect settings={settings} />
     </main>
   </body>
 </html>
 
-<!-- Use the variables you defined in your CSS -->
+<!-- Use the variables you defined in your settings -->
 <style is:global>
   body {
     background-color: var(--bg);

@@ -4,8 +4,8 @@
     "./packages/nottheme"
   ],
   "dependencies": {
-    "@astrojs/check": "^0.9.3",
-    "astro": "^4.15.9"
+    "@astrojs/check": "^0.9.4",
+    "astro": "^5.5.5"
   },
   "devDependencies": {
     "prettier": "^3.3.3",

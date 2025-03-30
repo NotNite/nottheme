@@ -7,6 +7,8 @@ interface Props {
 
 const { settings } = Astro.props;
 
+const rootSelector = settings.root ?? "body";
+
 let str = "";
 let root = "";
 let mediaQueries: Record<string, string> = {};
@@ -41,26 +43,28 @@ for (const [optionName, option] of Object.entries(settings.options)) {
 
   // Compute the normal classes
   for (const [choiceName, values] of Object.entries(option.values)) {
-    const className = `.${optionName}-${choiceName}`;
-    const input = `.nottheme:has(option[id="nottheme__noscript__${optionName}__${choiceName}"]:checked)`;
-    let style = `${className}, ${input} { `;
+    // set by Loader
+    const className = `.nottheme__${optionName}__${choiceName}`;
 
+    // for zero JavaScript support
+    const input = `${rootSelector}:not(.nottheme-js):has(option[id="nottheme-choice__${optionName}__${choiceName}"]:checked)`;
+
+    let style = `${className}, ${input} { `;
     for (const [property, value] of Object.entries(values)) {
       style += `${property}: ${value}; `;
     }
-
     style += "}";
+
     classes[className] = style;
   }
 }
 
 // Render root
-const rootQuery = "body.nottheme";
-str += `${rootQuery} { ${root.trimEnd()} } `;
+str += `${rootSelector} { ${root.trimEnd()} } `;
 
 // Render media queries
 for (const [query, styles] of Object.entries(mediaQueries)) {
-  str += `@media ${query} { ${rootQuery} { ${styles.trimEnd()} } } `;
+  str += `@media ${query} { ${rootSelector} { ${styles.trimEnd()} } } `;
 }
 
 // Render classes

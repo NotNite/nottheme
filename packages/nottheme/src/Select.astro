@@ -1,5 +1,4 @@
 ---
-import SelectInner from "./SelectInner.astro";
 import type { Settings } from "./types";
 
 interface Props {
@@ -9,15 +8,44 @@ interface Props {
 const { settings } = Astro.props;
 ---
 
-<noscript>
-  <SelectInner id="noscript" showBlank={true} settings={settings} />
+<div class="nottheme-select">
+  {
+    Object.entries(settings.options).map(([key, value]) => {
+      const name = value.name ?? key;
 
-  <style is:global>
-    .nottheme-theming-script {
-      /* Hack to get the JS-powered one to not show */
-      display: none !important;
-    }
-  </style>
-</noscript>
+      return (
+        <div class="nottheme-select-entry">
+          <label
+            for={"nottheme-select-entry__" + key}
+            class="nottheme-select-entry-label"
+          >
+            {name}
+          </label>
+          <select
+            id={"nottheme-select-entry__" + key}
+            class="nottheme-select-entry-choices"
+          >
+            {/*
+              Blank entry is required so that the theme doesn't stay stuck on the first one for noscript.
+              It's removed by Loader.astro when registering the event handlers
+            */}
+            <option id={`nottheme-choice-blank__${key}`} value="" />
 
-<SelectInner id="script" showBlank={false} settings={settings} />
+            {value.choices.map((theme) => {
+              const choiceName = value.names?.[theme] || theme;
+              return (
+                <option
+                  value={theme}
+                  id={`nottheme-choice__${key}__${theme}`}
+                  class={`nottheme__${key}__${theme}`}
+                >
+                  {choiceName}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+      );
+    })
+  }
+</div>

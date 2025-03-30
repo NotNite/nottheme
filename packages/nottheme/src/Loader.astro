@@ -1,23 +1,31 @@
 ---
 import type { Settings } from "./types";
 
-type SlimSettings = Record<
-  string,
-  {
-    c: string[];
-    d: string | (string | [string, string])[];
-  }
->;
+type SlimSettings = {
+  // options
+  o: Record<
+    string,
+    {
+      // choices
+      c: string[];
+
+      // default
+      d: string | (string | [string, string])[];
+    }
+  >;
+
+  // root
+  r?: string;
+};
 
 declare global {
   interface Window {
     __nottheme_settings: SlimSettings;
-    __nottheme_computeDefault: (
-      option: SlimSettings[string]
-    ) => string | undefined;
-    __nottheme_get: (key: string) => string;
-    __nottheme_set: (key: string, value: string) => void;
-    __nottheme_onChange?: (key: string, value: string) => void;
+    __nottheme_getRoot: () => HTMLElement | null;
+    __nottheme_computeDefault: (option: SlimSettings["o"][string]) => string;
+    __nottheme_get: (option: string) => string;
+    __nottheme_set: (option: string, choice: string, write?: boolean) => void;
+    __nottheme_onChange?: (option: string, choice: string) => void;
   }
 }
 
@@ -25,10 +33,11 @@ interface Props {
   settings: Settings;
 }
 
+// "Slim" down the settings so it takes up less characters
 const { settings } = Astro.props;
-const slimSettings: SlimSettings = {};
+const slimSettings: SlimSettings = { o: {}, r: settings.root };
 for (const [key, value] of Object.entries(settings.options)) {
-  slimSettings[key] = {
+  slimSettings.o[key] = {
     c: value.choices,
     d:
       typeof value.default === "string"
@@ -42,6 +51,8 @@ for (const [key, value] of Object.entries(settings.options)) {
           })
   };
 }
+
+// https://docs.astro.build/en/guides/client-side-scripts/#pass-frontmatter-variables-to-scripts
 const settingsJson = JSON.stringify(slimSettings);
 ---
 
@@ -50,6 +61,9 @@ const settingsJson = JSON.stringify(slimSettings);
   const settings: typeof window.__nottheme_settings = JSON.parse(
     document.querySelector<HTMLElement>("nottheme")!.dataset.settings!
   );
+
+  window.__nottheme_getRoot = () =>
+    document.querySelector<HTMLElement>(settings.r ?? "body");
 
   window.__nottheme_computeDefault = (option) => {
     if (typeof option.d === "string") {
@@ -65,90 +79,96 @@ const settingsJson = JSON.stringify(slimSettings);
           }
         }
       }
+
+      return option.c[0];
     }
   };
 
-  const prefix = "nottheme-";
-  window.__nottheme_get = (key) => {
-    const localStorageKey = prefix + key;
+  const localStoragePrefix = "nottheme-";
+  const classPrefix = "nottheme__";
+  const blankPrefix = "nottheme-choice-blank";
+  const selectClass = "nottheme-select";
+  const jsClass = "nottheme-js";
+
+  window.__nottheme_get = (option) => {
+    const localStorageKey = localStoragePrefix + option;
     const value = window.localStorage.getItem(localStorageKey);
-    if (value) return value;
 
-    const option = window.__nottheme_computeDefault(settings[key])!;
-    window.localStorage.setItem(localStorageKey, option);
-    return option;
+    // `includes` check in case the option was deleted
+    if (value && settings.o[option].c.includes(value)) return value;
+
+    return window.__nottheme_computeDefault(settings.o[option]);
   };
 
-  window.__nottheme_set = (key, value) => {
-    const localStorageKey = prefix + key;
+  window.__nottheme_set = (option, choice, write) => {
+    const localStorageKey = localStoragePrefix + option;
+    const classKey = classPrefix + option;
 
-    const classList = document.body.classList;
-    for (const className of classList) {
-      if (className.startsWith(key + "-")) {
-        classList.remove(className);
+    const root = window.__nottheme_getRoot();
+    if (root != null) {
+      const classList = root.classList;
+      for (const className of classList) {
+        if (className.startsWith(classKey + "__")) {
+          classList.remove(className);
+        }
       }
+      classList.add(classKey + "__" + choice);
     }
-    classList.add(key + "-" + value);
 
-    window.localStorage.setItem(localStorageKey, value);
-    if (window.__nottheme_onChange) window.__nottheme_onChange(key, value);
+    if (write !== false) {
+      window.localStorage.setItem(localStorageKey, choice);
+    }
+
+    if (window.__nottheme_onChange) window.__nottheme_onChange(option, choice);
   };
 
   function init() {
-    document.body.classList.remove("nottheme");
-    for (const group of Object.keys(settings)) {
-      const value = window.__nottheme_get(group);
-      const choices = settings[group].c;
-      if (!choices.includes(value)) {
-        window.__nottheme_set(
-          group,
-          window.__nottheme_computeDefault(settings[group])!
-        );
-      } else {
-        window.__nottheme_set(group, value);
-      }
+    const root = window.__nottheme_getRoot();
+    if (root != null && !root.classList.contains(jsClass)) {
+      root.classList.add(jsClass);
     }
-  }
 
-  function setLoaded() {
-    if (!document.body.classList.contains("nottheme-loaded")) {
-      document.body.classList.add("nottheme-loaded");
+    for (const option of Object.keys(settings.o)) {
+      const choice = window.__nottheme_get(option);
+      window.__nottheme_set(option, choice, false);
     }
   }
 
   function register() {
     const selects = document.querySelectorAll<HTMLSelectElement>(
-      ".nottheme-theming-script select"
+      `.${selectClass} select`
     );
 
-    for (const selected of selects) {
-      selected.addEventListener("change", () => {
-        const option = selected.options[selected.selectedIndex];
-        const id = option.id;
-        const [_, __, key, theme] = id.split("__");
-        window.__nottheme_set(key, theme);
+    for (const select of selects) {
+      select.addEventListener("change", () => {
+        const element = select.options[select.selectedIndex];
+        const id = element.id;
+        const [_, option, choice] = id.split("__");
+        window.__nottheme_set(option, choice);
       });
 
-      const options = selected.options;
-      for (const option of options) {
-        const key = option.id.split("__")[2];
-        const theme = option.value;
+      for (const element of select.options) {
+        if (element.id.startsWith(blankPrefix)) {
+          // Blank option is only there for noscript
+          select.removeChild(element);
+        } else {
+          const [_, option] = element.id.split("__");
+          const choice = element.value;
 
-        if (window.__nottheme_get(key) === theme) {
-          option.selected = true;
+          if (window.__nottheme_get(option) === choice) {
+            element.selected = true;
+          }
         }
       }
     }
   }
 
   init();
-
   document.addEventListener("DOMContentLoaded", register);
-  window.addEventListener("load", setLoaded);
+
   document.addEventListener("astro:after-swap", () => {
     // Astro remakes the DOM on navigation
     init();
     register();
-    setLoaded();
   });
 </script>
